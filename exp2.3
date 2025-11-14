@@ -1,0 +1,265 @@
+import java.sql.*;
+import java.util.*;
+
+public class Main {
+
+    // --------------------- DATABASE CONFIG ---------------------
+    static final String URL = "jdbc:mysql://localhost:3306/your_database";
+    static final String USER = "root";
+    static final String PASS = "1234";
+
+    // ------------------------------------------------------------------------
+    // PART A : FETCH EMPLOYEE DATA (JDBC Read Operation)
+    // ------------------------------------------------------------------------
+    public static void fetchEmployees() {
+        System.out.println("\n===== PART A: FETCHING EMPLOYEE DATA =====\n");
+
+        try (Connection con = DriverManager.getConnection(URL, USER, PASS);
+             Statement st = con.createStatement();
+             ResultSet rs = st.executeQuery("SELECT * FROM Employee")) {
+
+            while (rs.next()) {
+                System.out.println(
+                        "ID: " + rs.getInt("EmpID") +
+                        " | Name: " + rs.getString("Name") +
+                        " | Salary: " + rs.getDouble("Salary"));
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // PART B : PRODUCT CRUD WITH TRANSACTIONS
+    // ------------------------------------------------------------------------
+    public static void productCRUD() {
+        Scanner sc = new Scanner(System.in);
+        int choice;
+
+        while (true) {
+            System.out.println("\n===== PART B: PRODUCT CRUD MENU =====");
+            System.out.println("1. Add Product");
+            System.out.println("2. View Products");
+            System.out.println("3. Update Product");
+            System.out.println("4. Delete Product");
+            System.out.println("5. Exit CRUD");
+            System.out.print("Enter choice: ");
+            choice = sc.nextInt();
+
+            if (choice == 5) break;
+
+            try (Connection con = DriverManager.getConnection(URL, USER, PASS)) {
+                con.setAutoCommit(false); // Enable transaction
+
+                switch (choice) {
+
+                    case 1 -> {
+                        System.out.print("Enter Product ID: ");
+                        int id = sc.nextInt();
+                        System.out.print("Enter Name: ");
+                        String name = sc.next();
+                        System.out.print("Enter Price: ");
+                        double price = sc.nextDouble();
+                        System.out.print("Enter Quantity: ");
+                        int qty = sc.nextInt();
+
+                        PreparedStatement ps = con.prepareStatement(
+                                "INSERT INTO Product VALUES (?,?,?,?)");
+                        ps.setInt(1, id);
+                        ps.setString(2, name);
+                        ps.setDouble(3, price);
+                        ps.setInt(4, qty);
+                        ps.executeUpdate();
+
+                        con.commit();
+                        System.out.println("Product Added!");
+                    }
+
+                    case 2 -> {
+                        Statement st = con.createStatement();
+                        ResultSet rs = st.executeQuery("SELECT * FROM Product");
+
+                        System.out.println("\nProduct List:");
+                        while (rs.next()) {
+                            System.out.println(
+                                    rs.getInt("ProductID") + " | " +
+                                            rs.getString("ProductName") + " | " +
+                                            rs.getDouble("Price") + " | " +
+                                            rs.getInt("Quantity"));
+                        }
+                    }
+
+                    case 3 -> {
+                        System.out.print("Enter Product ID to Update: ");
+                        int upId = sc.nextInt();
+
+                        System.out.print("Enter new Price: ");
+                        double nPrice = sc.nextDouble();
+
+                        PreparedStatement ps = con.prepareStatement(
+                                "UPDATE Product SET Price=? WHERE ProductID=?");
+                        ps.setDouble(1, nPrice);
+                        ps.setInt(2, upId);
+                        ps.executeUpdate();
+
+                        con.commit();
+                        System.out.println("Product Updated!");
+                    }
+
+                    case 4 -> {
+                        System.out.print("Enter Product ID to Delete: ");
+                        int delId = sc.nextInt();
+
+                        PreparedStatement ps = con.prepareStatement(
+                                "DELETE FROM Product WHERE ProductID=?");
+                        ps.setInt(1, delId);
+                        ps.executeUpdate();
+
+                        con.commit();
+                        System.out.println("Product Deleted!");
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // PART C : STUDENT MVC APPLICATION
+    // ------------------------------------------------------------------------
+
+    // ------------------------- MODEL --------------------------
+    static class Student {
+        int id;
+        String name, department;
+        double marks;
+
+        Student(int id, String name, String department, double marks) {
+            this.id = id;
+            this.name = name;
+            this.department = department;
+            this.marks = marks;
+        }
+    }
+
+    // ------------------------ CONTROLLER ------------------------
+    static class StudentDAO {
+
+        public void addStudent(Student s) throws Exception {
+            Connection con = DriverManager.getConnection(URL, USER, PASS);
+            PreparedStatement ps = con.prepareStatement(
+                    "INSERT INTO Student VALUES (?,?,?,?)");
+            ps.setInt(1, s.id);
+            ps.setString(2, s.name);
+            ps.setString(3, s.department);
+            ps.setDouble(4, s.marks);
+            ps.executeUpdate();
+            con.close();
+        }
+
+        public void showStudents() throws Exception {
+            Connection con = DriverManager.getConnection(URL, USER, PASS);
+            Statement st = con.createStatement();
+            ResultSet rs = st.executeQuery("SELECT * FROM Student");
+
+            while (rs.next()) {
+                System.out.println(
+                        rs.getInt("StudentID") + " | " +
+                                rs.getString("Name") + " | " +
+                                rs.getString("Department") + " | " +
+                                rs.getDouble("Marks"));
+            }
+            con.close();
+        }
+
+        public void updateStudent(int id, double marks) throws Exception {
+            Connection con = DriverManager.getConnection(URL, USER, PASS);
+            PreparedStatement ps = con.prepareStatement(
+                    "UPDATE Student SET Marks=? WHERE StudentID=?");
+            ps.setDouble(1, marks);
+            ps.setInt(2, id);
+            ps.executeUpdate();
+            con.close();
+        }
+
+        public void deleteStudent(int id) throws Exception {
+            Connection con = DriverManager.getConnection(URL, USER, PASS);
+            PreparedStatement ps = con.prepareStatement(
+                    "DELETE FROM Student WHERE StudentID=?");
+            ps.setInt(1, id);
+            ps.executeUpdate();
+            con.close();
+        }
+    }
+
+    // --------------------------- VIEW ---------------------------
+    public static void studentMVC() {
+        Scanner sc = new Scanner(System.in);
+        StudentDAO dao = new StudentDAO();
+        int ch;
+
+        while (true) {
+            System.out.println("\n===== PART C: STUDENT MVC MENU =====");
+            System.out.println("1. Add Student");
+            System.out.println("2. View Students");
+            System.out.println("3. Update Student");
+            System.out.println("4. Delete Student");
+            System.out.println("5. Exit MVC");
+            System.out.print("Enter choice: ");
+            ch = sc.nextInt();
+
+            if (ch == 5) break;
+
+            try {
+                switch (ch) {
+                    case 1 -> {
+                        System.out.print("ID: ");
+                        int id = sc.nextInt();
+                        System.out.print("Name: ");
+                        String name = sc.next();
+                        System.out.print("Department: ");
+                        String dept = sc.next();
+                        System.out.print("Marks: ");
+                        double marks = sc.nextDouble();
+
+                        dao.addStudent(new Student(id, name, dept, marks));
+                        System.out.println("Student Added!");
+                    }
+
+                    case 2 -> dao.showStudents();
+
+                    case 3 -> {
+                        System.out.print("Enter Student ID: ");
+                        int id = sc.nextInt();
+                        System.out.print("Enter New Marks: ");
+                        double marks = sc.nextDouble();
+                        dao.updateStudent(id, marks);
+                        System.out.println("Student Updated!");
+                    }
+
+                    case 4 -> {
+                        System.out.print("Enter Student ID: ");
+                        int id = sc.nextInt();
+                        dao.deleteStudent(id);
+                        System.out.println("Student Deleted!");
+                    }
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // ------------------------------------------------------------------------
+    // MAIN METHOD : Run All 3 Tasks
+    // ------------------------------------------------------------------------
+    public static void main(String[] args) {
+        fetchEmployees();   // Part A
+        productCRUD();      // Part B
+        studentMVC();       // Part C
+    }
+}
