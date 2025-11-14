@@ -1,0 +1,216 @@
+// ====================================================================
+// ONE SINGLE JAVA PROGRAM containing:
+// 1. Autoboxing + Unboxing Sum (Part A)
+// 2. Student Serialization + Deserialization (Part B)
+// 3. Employee File Handling Menu System (Part C)
+// ====================================================================
+
+import java.io.*;
+import java.util.*;
+
+// ---------------------------- PART B: Student class for Serialization ----------------------------
+
+class Student implements Serializable {
+    private static final long serialVersionUID = 1L;
+
+    int studentID;
+    String name;
+    String grade;
+
+    Student(int studentID, String name, String grade) {
+        this.studentID = studentID;
+        this.name = name;
+        this.grade = grade;
+    }
+
+    void display() {
+        System.out.println("Student ID: " + studentID);
+        System.out.println("Name: " + name);
+        System.out.println("Grade: " + grade);
+    }
+}
+
+
+// ---------------------------- PART C: Employee class (for File Handling) ----------------------------
+
+class Employee {
+    int empId;
+    String name;
+    String designation;
+    double salary;
+
+    Employee(int empId, String name, String designation, double salary) {
+        this.empId = empId;
+        this.name = name;
+        this.designation = designation;
+        this.salary = salary;
+    }
+
+    public String toString() {
+        return empId + "," + name + "," + designation + "," + salary;
+    }
+}
+
+
+// ---------------------------- MAIN PROGRAM FOR ALL PARTS ----------------------------
+
+public class MainProgram {
+
+    public static void main(String[] args) throws Exception {
+
+        Scanner sc = new Scanner(System.in);
+
+        System.out.println("\n==================== PART A: AUTOBOXING SUM ====================");
+        partA_AutoboxingSum(sc);
+
+        System.out.println("\n==================== PART B: SERIALIZATION =====================");
+        partB_Serialization();
+
+        System.out.println("\n==================== PART C: EMPLOYEE MENU =====================");
+        partC_EmployeeMenu(sc);
+
+        sc.close();
+    }
+
+
+    // -------------------------------------------------------------------------
+    // PART A : SUM OF INTEGERS USING AUTOBOXING + UNBOXING
+    // -------------------------------------------------------------------------
+    public static void partA_AutoboxingSum(Scanner sc) {
+        ArrayList<Integer> list = new ArrayList<>();
+
+        System.out.print("Enter number of integers: ");
+        int n = Integer.parseInt(sc.nextLine());
+
+        for (int i = 0; i < n; i++) {
+            System.out.print("Enter integer " + (i + 1) + ": ");
+            String input = sc.nextLine();
+
+            Integer number = Integer.parseInt(input); // Auto-Boxing
+            list.add(number);
+        }
+
+        int sum = 0;
+        for (Integer num : list) {
+            sum += num; // Unboxing
+        }
+
+        System.out.println("Sum of integers = " + sum);
+    }
+
+
+    // -------------------------------------------------------------------------
+    // PART B : SERIALIZATION + DESERIALIZATION OF STUDENT
+    // -------------------------------------------------------------------------
+    public static void partB_Serialization() throws Exception {
+
+        Student st = new Student(101, "Aman", "A+");
+
+        // Serialize
+        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("student.ser"));
+        oos.writeObject(st);
+        oos.close();
+        System.out.println("Student object serialized successfully.");
+
+        // Deserialize
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream("student.ser"));
+        Student st2 = (Student) ois.readObject();
+        ois.close();
+
+        System.out.println("\nDeserialized Student:");
+        st2.display();
+    }
+
+
+    // -------------------------------------------------------------------------
+    // PART C : MENU DRIVEN EMPLOYEE SYSTEM (File Handling)
+    // -------------------------------------------------------------------------
+    public static void partC_EmployeeMenu(Scanner sc) throws Exception {
+
+        String fileName = "employees.txt";
+        boolean running = true;
+
+        while (running) {
+            System.out.println("\n======== EMPLOYEE MENU ========");
+            System.out.println("1. Add Employee");
+            System.out.println("2. Display All Employees");
+            System.out.println("3. Exit");
+            System.out.print("Enter choice: ");
+
+            int choice = Integer.parseInt(sc.nextLine());
+
+            switch (choice) {
+
+                case 1:
+                    addEmployee(sc, fileName);
+                    break;
+
+                case 2:
+                    displayEmployees(fileName);
+                    break;
+
+                case 3:
+                    System.out.println("Exiting Employee System...");
+                    running = false;
+                    break;
+
+                default:
+                    System.out.println("Invalid choice!");
+            }
+        }
+    }
+
+
+    // Add employee to file
+    public static void addEmployee(Scanner sc, String fileName) throws Exception {
+
+        System.out.print("Enter Employee ID: ");
+        int id = Integer.parseInt(sc.nextLine());
+
+        System.out.print("Enter Name: ");
+        String name = sc.nextLine();
+
+        System.out.print("Enter Designation: ");
+        String desig = sc.nextLine();
+
+        System.out.print("Enter Salary: ");
+        double salary = Double.parseDouble(sc.nextLine());
+
+        Employee emp = new Employee(id, name, desig, salary);
+
+        BufferedWriter bw = new BufferedWriter(new FileWriter(fileName, true)); // append mode
+        bw.write(emp.toString());
+        bw.newLine();
+        bw.close();
+
+        System.out.println("Employee added successfully.");
+    }
+
+
+    // Display all employees
+    public static void displayEmployees(String fileName) throws Exception {
+
+        File file = new File(fileName);
+
+        if (!file.exists()) {
+            System.out.println("No employee records yet.");
+            return;
+        }
+
+        BufferedReader br = new BufferedReader(new FileReader(fileName));
+        String line;
+
+        System.out.println("\n------ EMPLOYEE LIST ------");
+
+        while ((line = br.readLine()) != null) {
+            String[] data = line.split(",");
+            System.out.println("ID: " + data[0] +
+                    " | Name: " + data[1] +
+                    " | Designation: " + data[2] +
+                    " | Salary: " + data[3]);
+        }
+
+        br.close();
+    }
+}
+
